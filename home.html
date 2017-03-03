@@ -93,7 +93,7 @@
                 if (!conn) {
                     return false;
                 }
-                var data = { "prev": [pX, pY], "curr": [cX, cY] };
+                var data = [pX, pY, cX, cY];
                 conn.send(JSON.stringify(data));
                 return false;
             }
@@ -106,14 +106,13 @@
                 conn.onmessage = function (evt) {
                     var messages = evt.data.split('\n');
                     //console.log(messages)
-                    var data = JSON.parse(messages[0])
-                    console.log(data);
-                    // for (var i = 0; i < messages.length; i++) {
-                    //     var item = document.createElement("div");
-                    //     item.innerText = messages[i];
-                    //     appendLog(item);
-                    // }
-                    drawRemote(data["prev"][0], data["prev"][1], data["curr"][0], data["curr"][1]);
+                    var data;
+                    for (var i = 0; i < messages.length; i++) {
+                        data = JSON.parse(messages[i])
+                        console.log(data);
+                        drawRemote(data[0], data[1], data[2], data[3]);
+                    }
+
                 };
             } else {
                 var item = document.createElement("div");
