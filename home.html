@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Chat Example</title>
+    <script type="text/javascript">
+        window.onload = function () {
+            init();
+            //var name = prompt("Please enter your name", "e.g: John");
+            var conn;
+
+            var prevX = 0,
+                currX = 0,
+                prevY = 0,
+                currY = 0,
+                flag = false,
+                dot_flag = false;
+            function init() {
+                canvas = document.getElementById('art');
+                ctx = canvas.getContext("2d");
+                ctx.canvas.width = window.innerWidth;
+                ctx.canvas.height = window.innerHeight;
+                w = ctx.canvas.width;
+                h = ctx.canvas.height;
+
+                canvas.addEventListener("mousemove", function (e) {
+                    findxy('move', e)
+                }, false);
+                canvas.addEventListener("mousedown", function (e) {
+                    findxy('down', e)
+                }, false);
+                canvas.addEventListener("mouseup", function (e) {
+                    findxy('up', e)
+                }, false);
+                canvas.addEventListener("mouseout", function (e) {
+                    findxy('out', e)
+                }, false);
+            }
+
+            function findxy(res, e) {
+                if (res == 'down') {
+                    prevX = currX;
+                    prevY = currY;
+                    currX = e.clientX - canvas.offsetLeft;
+                    currY = e.clientY - canvas.offsetTop;
+
+                    flag = true;
+                    dot_flag = true;
+                    if (dot_flag) {
+                        ctx.beginPath();
+                        ctx.fillStyle = "black";
+                        ctx.fillRect(currX, currY, 2, 2);
+                        ctx.closePath();
+                        dot_flag = false;
+                    }
+                }
+                if (res == 'up' || res == "out") {
+                    flag = false;
+                }
+                if (res == 'move') {
+                    if (flag) {
+                        prevX = currX;
+                        prevY = currY;
+                        currX = e.clientX - canvas.offsetLeft;
+                        currY = e.clientY - canvas.offsetTop;
+                        draw();
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(currX, currY);
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+                sendPixels(prevX, prevY, currX, currY);
+            }
+
+            function drawRemote(prevX, prevY, currX, currY) {
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(currX, currY);
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            function sendPixels(pX, pY, cX, cY) {
+                if (!conn) {
+                    return false;
+                }
+                var data = { "prev": [pX, pY], "curr": [cX, cY] };
+                conn.send(JSON.stringify(data));
+                return false;
+            }
+
+            if (window["WebSocket"]) {
+                conn = new WebSocket("ws://" + document.location.host + "/ws");
+                conn.onclose = function (evt) {
+                    alert("Connection closed.");
+                };
+                conn.onmessage = function (evt) {
+                    var messages = evt.data.split('\n');
+                    //console.log(messages)
+                    var data = JSON.parse(messages[0])
+                    console.log(data);
+                    // for (var i = 0; i < messages.length; i++) {
+                    //     var item = document.createElement("div");
+                    //     item.innerText = messages[i];
+                    //     appendLog(item);
+                    // }
+                    drawRemote(data["prev"][0], data["prev"][1], data["curr"][0], data["curr"][1]);
+                };
+            } else {
+                var item = document.createElement("div");
+                item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+                appendLog(item);
+            }
+        };
+    </script>
+    <style type="text/css">
+        html {
+            overflow: hidden;
+        }
+        /*body {
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: gray;
+}
+
+#log {
+    background: white;
+    margin: 0;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    position: absolute;
+    top: 0.5em;
+    left: 0.5em;
+    right: 0.5em;
+    bottom: 3em;
+    overflow: auto;
+}
+
+#form {
+    padding: 0 0.5em 0 0.5em;
+    margin: 0;
+    position: absolute;
+    bottom: 1em;
+    left: 0px;
+    width: 100%;
+    overflow: hidden;
+}*/
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <!--<div id="log"></div>
+<form id="form">
+    <input type="submit" value="Send" />
+    <input type="text" id="msg" size="64"/>
+</form>-->
+    <canvas id="art"></canvas>
+
+</body>
+
+</html>
